@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Sorting Process</title>
+   <style>
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+           font-family: Arial, sans-serif;
+       }
+
+       body {
+           background: linear-gradient(to right, #d4fc79, #96e6a1);
+           height: 100vh;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           padding: 20px;
+       }
+
+       .container {
+           background: white;
+           width: 430px;
+           padding: 35px;
+           border-radius: 20px;
+           box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+           text-align: center;
+       }
+
+       h1 {
+           color: green;
+           margin-bottom: 18px;
+       }
+
+       h2 {
+           color: #333;
+           margin-bottom: 15px;
+       }
+
+       p {
+           font-size: 17px;
+           margin: 10px 0;
+           color: #555;
+       }
+
+       .loader {
+           border: 6px solid #f3f3f3;
+           border-top: 6px solid green;
+           border-radius: 50%;
+           width: 55px;
+           height: 55px;
+           animation: spin 1s linear infinite;
+           margin: 20px auto;
+       }
+
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
+
+       .status-box {
+           background: #f5fff5;
+           padding: 15px;
+           border-radius: 12px;
+           margin-top: 15px;
+           margin-bottom: 15px;
+       }
+
+       button {
+           width: 100%;
+           padding: 14px;
+           margin-top: 15px;
+           background: green;
+           color: white;
+           font-size: 16px;
+           border: none;
+           border-radius: 10px;
+           cursor: pointer;
+       }
+
+       button:hover {
+           background: #0b7a0b;
+       }
+
+       .note {
+           font-size: 14px;
+           color: #777;
+           margin-top: 12px;
+       }
+   </style>
+</head>
+<body>
+
+   <div class="container">
+
+       <h1>♻️ EcoBag Sorting System</h1>
+
+       <h2>Sorting in Progress...</h2>
+
+       <div class="loader"></div>
+
+       <p>Please insert all eco-bags into the slot.</p>
+
+       <div class="status-box">
+           <p><b>Current Total Bags:</b> <span id="total">0</span></p>
+           <p><b>Type of Bag:</b> <span id="bagtype">-</span></p>
+       </div>
+
+       <button onclick="finishProcess()">DONE</button>
+
+       <p class="note">
+           Live bag updates are displayed on the prototype LCD screen.
+       </p>
+
+   </div>
+
+   <script type="module">
+
+       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+       import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+       const firebaseConfig = {
+           apiKey: "AIzaSyAvAvsFrbnkcoF1P7svHB5txi0IKYEuwLM",
+           authDomain: "ecobagmonitoring.firebaseapp.com",
+           databaseURL: "https://ecobagmonitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
+           projectId: "ecobagmonitoring",
+           storageBucket: "ecobagmonitoring.firebasestorage.app",
+           messagingSenderId: "294389166196",
+           appId: "1:294389166196:web:986cd505dfeecaa8662121"
+       };
+
+       const app = initializeApp(firebaseConfig);
+       const db = getDatabase(app);
+
+       const matrix = localStorage.getItem("matrix");
+
+       // CURRENT TOTAL BAGS & TYPE OF BAG
+       const sessionRef = ref(db, `users/${matrix}/session`);
+
+       onValue(sessionRef, (snapshot) => {
+           const data = snapshot.val();
+           if (data) {
+               document.getElementById("total").innerHTML = data.total;
+           }
+       });
+
+       // LAST BAG TYPE dari machine_status
+       const machineRef = ref(db, "machine_status");
+
+       onValue(machineRef, (snapshot) => {
+           const data = snapshot.val();
+           if (data && data.message) {
+               // Extract bag type from "Last: PAPER | Total: 10"
+               const match = data.message.match(/Last:\s*(\w+)/);
+               if (match) {
+                   document.getElementById("bagtype").innerHTML = match[1];
+               }
+           }
+       });
+
+       window.finishProcess = async function() {
+           await set(ref(db, "sorting_status"), false);
+           await set(ref(db, "active_user"), null);
+           window.location.href = "digitalreceipt.html";
+       }
+
+   </script>
+
+</body>
+</html>

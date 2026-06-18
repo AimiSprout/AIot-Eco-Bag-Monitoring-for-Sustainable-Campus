@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoBag Analytics</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial, sans-serif;
+}
+
+body{
+background:linear-gradient(to right,#d4fc79,#96e6a1);
+padding:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+
+h1{
+text-align:center;
+color:green;
+margin-bottom:30px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:15px;
+margin-bottom:30px;
+}
+
+#predictionText{
+    text-align:center;
+    line-height:1.8;
+}
+
+.prediction-number{
+    font-size:42px;
+    font-weight:bold;
+    color:green;
+    margin:10px 0;
+}
+
+.prediction-title{
+    font-size:20px;
+    font-weight:bold;
+    color:#222;
+}
+
+.prediction-sub{
+    font-size:15px;
+    color:#666;
+}
+
+#lastUpdated{
+    font-size:12px;
+    color:gray;
+    margin-top:5px;
+}
+
+.card{
+background:#f5fff5;
+padding:20px;
+border-radius:15px;
+text-align:center;
+box-shadow:0 4px 10px rgba(0,0,0,0.08);
+;
+}
+
+.prediction-card{
+    background:linear-gradient(135deg,#f0fff0,#e8fff1);
+    border:2px solid #d8f5d8;
+    padding:30px;
+}
+
+.prediction-card{
+padding:35px;
+background:#f0fff0;
+border:2px solid #4caf50;
+box-shadow:0 6px 15px rgba(0,128,0,0.15);
+}
+
+.prediction-number{
+font-size:48px;
+font-weight:bold;
+color:green;
+margin-top:15px;
+margin-bottom:10px;
+}
+
+.card h2{
+font-size:16px;
+color:#444;
+margin-bottom:10px;
+}
+
+.card p{
+font-size:24px;
+font-weight:bold;
+color:green;
+}
+
+.section{
+background:#fafafa;
+padding:25px;
+border-radius:18px;
+margin-top:20px;
+}
+
+.section h2{
+margin-bottom:20px;
+color:#333;
+}
+
+.graph{
+height:180px;
+display:flex;
+align-items:flex-end;
+justify-content:space-around;
+gap:12px;
+}
+
+.bar{
+width:85px;
+background:green;
+min-height:20px;
+font-weight:bold;
+border-radius:10px 10px 0 0;
+color:white;
+text-align:center;
+padding-top:8px;
+font-size:14px;
+}
+
+.info{
+margin-top:20px;
+line-height:1.8;
+font-size:17px;
+color:#444;
+}
+
+.btn-area{
+text-align:center;
+margin-top:30px;
+}
+
+.btn{
+display:inline-block;
+padding:14px 28px;
+background:green;
+color:white;
+text-decoration:none;
+border-radius:10px;
+font-size:16px;
+}
+
+.btn:hover{
+background:#0b7a0b;
+}
+
+.ai-badge{
+    display:inline-block;
+    background:#16a34a;
+    color:white;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h1>📊 EcoBag Analytics Dashboard</h1>
+
+<div class="grid">
+
+<div class="card">
+<h2>Most Used Bag</h2>
+<p id="mostused">Loading...</p>
+</div>
+
+<div class="card">
+<h2>Total Bags</h2>
+<p id="totalbags">0</p>
+</div>
+
+<div class="card">
+<h2>Current Woven</h2>
+<p id="woven">0</p>
+</div>
+
+<div class="card">
+<h2>Current Paper</h2>
+<p id="paper">0</p>
+</div>
+
+<div class="card">
+<h2>Current Canvas</h2>
+<p id="canvas">0</p>
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="card prediction-card">
+
+    <p id="predictionText">
+        Loading prediction...
+    </p>
+
+    <p id="lastUpdated">
+        Last Updated: --
+    </p>
+
+</div>
+
+</div>
+
+<h2>📈 Historical Collection Trend</h2>
+
+<div class="graph" id="weeklyGraph">
+
+</div>
+
+<div class="info">
+
+<p>✔ Live bag statistics retrieved from Firebase.</p>
+<p>✔ Forecasting based on historical collection data</p>
+
+</div>
+
+</div>
+
+<div class="btn-area">
+<a href="admin.html" class="btn">⬅ Back to Admin Dashboard</a>
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyAvAvsFrbnkcoF1P7svHB5txi0IKYEuwLM",
+authDomain: "ecobagmonitoring.firebaseapp.com",
+databaseURL: "https://ecobagmonitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "ecobagmonitoring",
+storageBucket: "ecobagmonitoring.firebasestorage.app",
+messagingSenderId: "294389166196",
+appId: "1:294389166196:web:986cd505dfeecaa8662121"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const bagRef = ref(db,"bag_count");
+const historyRef = ref(db,"history");
+const predictionRef = ref(db,"prediction");
+
+onValue(bagRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+if(data){
+
+document.getElementById("woven").innerHTML = data.woven;
+document.getElementById("paper").innerHTML = data.paper;
+document.getElementById("canvas").innerHTML = data.canvas;
+document.getElementById("totalbags").innerHTML = data.total;
+
+let max = Math.max(data.woven,data.paper,data.canvas);
+
+if(max == data.woven){
+document.getElementById("mostused").innerHTML = "Woven";
+}
+else if(max == data.paper){
+document.getElementById("mostused").innerHTML = "Paper";
+}
+else{
+document.getElementById("mostused").innerHTML = "Canvas";
+}
+
+}
+
+});
+
+onValue(historyRef,(snapshot)=>{
+
+    const history = snapshot.val();
+
+    if(!history) return;
+
+    let weeklyCount = {
+        Monday:0,
+        Tuesday:0,
+        Wednesday:0,
+        Thursday:0,
+        Friday:0,
+        Saturday:0,
+        Sunday:0
+    };
+
+    Object.values(history).forEach(item=>{
+
+        if(item.day){
+            weeklyCount[item.day]++;
+        }
+
+    });
+
+    console.log("Weekly Count");
+    console.log(weeklyCount);
+
+    let totalWeek = Object.values(weeklyCount)
+                      .reduce((a,b)=>a+b,0);
+
+                      
+    let predictedNextWeek =
+    Math.round(totalWeek * 1.3); 
+
+let maxDay = Object.keys(weeklyCount)
+                   .reduce((a,b)=>
+                        weeklyCount[a] > weeklyCount[b]
+                        ? a : b
+                   );
+
+/*                 
+document.getElementById("predictionText").innerHTML =
+`
+Predicted busiest day next week:
+<b>${maxDay}</b><br><br>
+
+Expected collections:
+<b>${predictedNextWeek}</b> bags/week
+`;*/
+
+const now = new Date();
+
+document.getElementById("lastUpdated").innerHTML =
+"Last Updated: " + now.toLocaleString();
+
+    const graph = document.getElementById("weeklyGraph");
+
+graph.innerHTML = "";
+
+let maxCount = Math.max(...Object.values(weeklyCount));
+
+Object.entries(weeklyCount).forEach(([day,count])=>{
+
+    let barHeight =
+        (Math.sqrt(count) / Math.sqrt(maxCount)) * 100;
+
+    graph.innerHTML += `
+    <div class="bar" style="height:${barHeight}px">
+        ${day.substring(0,3)}
+    </div>
+    `;
+});
+
+});
+
+onValue(predictionRef,(snapshot)=>{
+
+    const pred = snapshot.val();
+
+    if(!pred) return;
+
+    document.getElementById("predictionText").innerHTML =
+    `
+    <div class="ai-badge">
+    AI MODEL ACTIVE
+    </div>
+
+    <div class="prediction-sub">
+    TensorFlow Lite + Linear Regression
+    </div>
+
+    <div>
+    AI Collection Forecast
+    </div>
+
+    <div class="prediction-number">
+    ${pred.nextDayPrediction}
+    </div>
+
+    <div>
+    Bags Expected Tomorrow
+    </div>
+
+    <div style="
+    margin-top:10px;
+    font-size:13px;
+    color:#666;
+    ">
+    Generated using Linear Regression Model
+    </div>
+    `;
+
+});
+
+</script>
+
+</body>
+</html>

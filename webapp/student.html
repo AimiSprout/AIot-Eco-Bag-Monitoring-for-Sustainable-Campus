@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>EcoBag Registration</title>
+   <style>
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           font-family: Arial, sans-serif;
+           background: linear-gradient(to right, #d4fc79, #96e6a1);
+           height: 100vh;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+       }
+
+       .container {
+           background: white;
+           width: 400px;
+           padding: 35px;
+           border-radius: 20px;
+           box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+           text-align: center;
+       }
+
+       h1 {
+           margin-bottom: 25px;
+           color: green;
+       }
+
+       input {
+           width: 100%;
+           padding: 12px;
+           margin: 10px 0;
+           border: 1px solid #ccc;
+           border-radius: 10px;
+           font-size: 16px;
+       }
+
+       button {
+           width: 100%;
+           padding: 14px;
+           margin-top: 15px;
+           background: green;
+           color: white;
+           font-size: 16px;
+           border: none;
+           border-radius: 10px;
+           cursor: pointer;
+           transition: 0.3s;
+       }
+
+       button:hover {
+           background: #0b7a0b;
+       }
+
+       #status {
+           margin-top: 15px;
+           color: red;
+           font-size: 14px;
+       }
+   </style>
+</head>
+<body>
+
+   <div class="container">
+
+       <h1>♻️ EcoBag Registration</h1>
+
+       <input type="text" id="name" placeholder="Enter Full Name">
+
+       <input type="text" id="matrix" placeholder="Enter Matrix Number">
+
+       <button onclick="submitData()">Start Submission</button>
+
+       <p id="status"></p>
+
+   </div>
+
+   <script type="module">
+
+       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+       import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+       const firebaseConfig = {
+           apiKey: "AIzaSyAvAvsFrbnkcoF1P7svHB5txi0IKYEuwLM",
+           authDomain: "ecobagmonitoring.firebaseapp.com",
+           databaseURL: "https://ecobagmonitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
+           projectId: "ecobagmonitoring",
+           storageBucket: "ecobagmonitoring.firebasestorage.app",
+           messagingSenderId: "294389166196",
+           appId: "1:294389166196:web:986cd505dfeecaa8662121"
+       };
+
+       const app = initializeApp(firebaseConfig);
+       const db = getDatabase(app);
+
+       window.submitData = async function() {
+
+           let name = document.getElementById("name").value.trim();
+           let matrix = document.getElementById("matrix").value.trim();
+
+           if (name === "" || matrix === "") {
+               document.getElementById("status").innerHTML = "Please fill in all details.";
+               return;
+           }
+
+           try {
+
+               await set(ref(db, "active_user"), {
+                   name: name,
+                   matrix: matrix
+               });
+
+               const userSnap = await get(ref(db, `users/${matrix}`));
+
+               if (!userSnap.exists()) {
+                   await set(ref(db, `users/${matrix}`), {
+                       name: name,
+                       matrix: matrix,
+                       session: {
+                           paper: 0,
+                           canvas: 0,
+                           woven: 0,
+                           total: 0
+                       }
+                   });
+               } else {
+                   await set(ref(db, `users/${matrix}/name`), name);
+               }
+
+               await set(ref(db, "sorting_status"), true);
+
+               localStorage.setItem("username", name);
+               localStorage.setItem("matrix", matrix);
+
+               window.location.href = "waiting.html";
+
+           } catch (error) {
+               document.getElementById("status").innerHTML = "Error: " + error.message;
+           }
+
+       }
+
+   </script>
+
+</body>
+</html>
